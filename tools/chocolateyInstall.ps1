@@ -7,6 +7,9 @@ $serviceLogDirectory = "$serviceInstallationDirectory\logs"
 $serviceConfigDirectory = "$serviceInstallationDirectory\conf"
 $serviceDataDirectory = "$serviceInstallationDirectory\data"
 
+$backupFilePath = Join-Path $serviceConfigDirectory "client.bak"
+$configFilePath = Join-Path $serviceConfigDirectory "client.hcl"
+
 $packageParameters = $env:chocolateyPackageParameters
 if (-not ($packageParameters)) {
   $packageParameters = ""
@@ -32,8 +35,14 @@ New-Item -ItemType directory -Path "$serviceDataDirectory" -ErrorAction Silently
 # Unzip and move Nomad
 Get-ChocolateyUnzip  $sourcePath "$toolsPath"
 
-#Copy default configuration
+# Copy default configuration if Config Doesn't Exist
+if (Test-Path $configFilePath) {
+# Create a Backup of the Config if it already exists, Don't replace it
+Copy-Item $configFilePath $backupFilePath
+}else{
+# Copy Default Config File
 Copy-Item "$toolsPath/../configs/client.hcl" "$serviceConfigDirectory"
+}
 
 # Create event log source
 # User -Force to avoid "A key at this path already exists" exception. Overwrite not an issue since key is not further modified
